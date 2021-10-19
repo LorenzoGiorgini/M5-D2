@@ -19,7 +19,6 @@ console.log(authorsJsonPath)
 //Get all the authors
 authorsRouter.get("/" , (req ,res) => {
     
-
     //reading the whole body converting it from machine language to JSON
     const authors = JSON.parse(fs.readFileSync(authorsJsonPath))
 
@@ -44,6 +43,7 @@ authorsRouter.get("/:authorsId" , (req ,res) => {
 })
 
 
+
 //Create a unique author with an Id
 authorsRouter.post("/" , (req ,res) => {
 
@@ -54,6 +54,13 @@ authorsRouter.post("/" , (req ,res) => {
 
     const authors = JSON.parse(fs.readFileSync(authorsJsonPath))
 
+    console.log(authors.filter(author => author.email === req.body.email).length > 0)
+
+    if(authors.filter(author => author.email === req.body.email).length > 0){
+        res.status(403).send({succes: false , data: "User already exists"})
+        return
+    }
+
     authors.push(createAuthor)
 
     //writing the changes on the disk
@@ -61,6 +68,8 @@ authorsRouter.post("/" , (req ,res) => {
 
     res.status(201).send({id: authors.id})
 })
+
+
 
 //Modify a unique author that has the matching Id
 authorsRouter.put("/:authorsId" , (req ,res) => {
@@ -83,6 +92,7 @@ authorsRouter.put("/:authorsId" , (req ,res) => {
 })
 
 
+
 //Delete a unique author that has the matching Id
 authorsRouter.delete("/:authorsId" , (req ,res) => {
 
@@ -96,6 +106,7 @@ authorsRouter.delete("/:authorsId" , (req ,res) => {
 
     res.status(204).send()
 })
+
 
 
 export default authorsRouter
