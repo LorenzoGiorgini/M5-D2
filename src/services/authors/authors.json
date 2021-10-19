@@ -1,0 +1,35 @@
+[
+    {
+        "name": "Rolenzo",
+        "surname": "Borfjfjs",
+        "email": "lorenzo@outlook.com",
+        "dateOfBirth": "24-07-2001",
+        "createdAt": "2021-10-19T13:44:55.905Z",
+        "id": "e92qxa5zkkuy521ya"
+    },
+    {
+        "name": "Rolenzo",
+        "surname": "Giorgini",
+        "email": "lore@outlook.com",
+        "dateOfBirth": "24-07-2001",
+        "createdAt": "2021-10-19T13:51:48.161Z",
+        "id": "e92qxa850kuy5aw1u"
+    },
+    {
+        "name": "Rolenzo",
+        "surname": "Giorgini",
+        "email": "lore@outlook.com",
+        "dateOfBirth": "24-07-2001",
+        "createdAt": "2021-10-19T13:51:50.012Z",
+        "id": "e92qxa850kuy5axh8"
+    },
+    {
+        "name": "Borienzo",
+        "surname": "Giorgini",
+        "email": "lore@outlook.com",
+        "dateOfBirth": "24-07-2001",
+        "createdAt": "2021-10-19T14:08:14.197Z",
+        "id": "e92qxabaokuy5w0vq",
+        "avatar": "https://ui-avatars.com/api/?name=Borienzo+Giorgini"
+    }
+]
