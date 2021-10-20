@@ -9,13 +9,17 @@ import { badRequest , unauthorizedHandler , notFoundHandler , defaultError } fro
 const server = express()
 
 //FIRST TWO MIDDLEWARES
+
 server.use(cors())
 server.use(express.json())  //parse every request to json
 
 
+
 //ENDPOINTS
+
 server.use("/authors" , authorsRouter) //setting the endpoint prefixes
 server.use("/blogPosts" , blogPostsRouter) //setting the endpoint prefixes
+
 
 //ERROR HANDLERS
 
