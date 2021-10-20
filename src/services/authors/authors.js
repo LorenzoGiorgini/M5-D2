@@ -12,7 +12,7 @@ const currentFolder = dirname(fileURLToPath(import.meta.url))
 
 //Joined Main folder with json file
 const authorsJsonPath = join(currentFolder , "authors.json")
-console.log(authorsJsonPath)
+
 
 
 
@@ -54,8 +54,6 @@ authorsRouter.post("/" , (req ,res) => {
 
     const authors = JSON.parse(fs.readFileSync(authorsJsonPath))
 
-    console.log(authors.filter(author => author.email === req.body.email).length > 0)
-
     if(authors.filter(author => author.email === req.body.email).length > 0){
         res.status(403).send({succes: false , data: "User already exists"})
         return
@@ -70,9 +68,22 @@ authorsRouter.post("/" , (req ,res) => {
 })
 
 
+authorsRouter.post("/checkEmail" , (req ,res) => {
+
+    const authors = JSON.parse(fs.readFileSync(authorsJsonPath))
+
+    if(authors.filter(author => author.email === req.body.email).length > 0){
+        res.status(403).send({succes: false , data: "User already exists"})
+    } else {
+        res.status(201).send({succes: true})
+    }
+})
+
+
 
 //Modify a unique author that has the matching Id
 authorsRouter.put("/:authorsId" , (req ,res) => {
+    
     //read all the authors
     const authors = JSON.parse(fs.readFileSync(authorsJsonPath))
 
