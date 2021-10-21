@@ -1,87 +1,87 @@
 import express from "express";
-import uniqid from "uniqid"
+import uniqid from "uniqid";
+import multer from "multer";
 
-import { readAuthors , writeAuthors , authorsAvatarPic} from "../../lib/tools.js"
+import {
+  readAuthors,
+  writeAuthors,
+  authorsAvatarPic,
+} from "../../lib/tools.js";
 
-
-const authorsRouter = express.Router()
-
-
+const authorsRouter = express.Router();
 
 //Get all the authors
-authorsRouter.get("/" , async (req ,res) => {
-    
-    //reading the whole body converting it from machine language to JSON
-    const authors = await readAuthors()
-    
-    //Sending the whole body as a response
-    res.status(200).send(authors)
-})
+authorsRouter.get("/", async (req, res) => {
+  //reading the whole body converting it from machine language to JSON
+  const authors = await readAuthors();
 
-
+  //Sending the whole body as a response
+  res.status(200).send(authors);
+});
 
 //Get  the author with the matching Id
-authorsRouter.get("/:authorsId" , async (req ,res) => {
+authorsRouter.get("/:authorsId", async (req, res) => {
+  const authors = await readAuthors();
 
+  //filtering the author that have that id
+  const filteredAuthors = authors.find(
+    (authors) => authors.id === req.params.authorsId
+  );
 
-    const authors = await readAuthors()
-
-    //filtering the author that have that id
-    const filteredAuthors = authors.find( authors => authors.id === req.params.authorsId)
-
-    res.status(200).send(filteredAuthors)
-})
-
-
+  res.status(200).send(filteredAuthors);
+});
 
 //Create a unique author with an Id
-authorsRouter.post("/" , async (req ,res) => {
+authorsRouter.post("/", async (req, res) => {
+  console.log(req.body);
 
-    console.log(req.body)
+  //spreading the whole body of the request sent by the client then adding an id and a date
+  const createAuthor = {
+    ...req.body,
+    createdAt: new Date(),
+    id: uniqid(),
+    avatar: `https://ui-avatars.com/api/?name=${req.body.name}+${req.body.surname}`,
+  };
 
-    //spreading the whole body of the request sent by the client then adding an id and a date
-    const createAuthor = { ...req.body , createdAt: new Date() , id: uniqid() , avatar: `https://ui-avatars.com/api/?name=${req.body.name}+${req.body.surname}`}
+  const authors = await readAuthors();
 
-    const authors = await readAuthors()
+  if (authors.filter((author) => author.email === req.body.email).length > 0) {
+    res.status(403).send({ succes: false, data: "User already exists" });
+    return;
+  }
 
-    if(authors.filter(author => author.email === req.body.email).length > 0){
-        res.status(403).send({succes: false , data: "User already exists"})
-        return
+  authors.push(createAuthor);
+
+  //writing the changes on the disk
+  await writeAuthors(authors);
+
+  res.status(201).send({ id: authors.id });
+});
+
+authorsRouter.post(
+  "/:authorsId/uploadAvatar",
+  multer().single("avatar"),
+  async (req, res, next) => {
+    try {
+      let extension = req.file.mimetype.split('/')[1]
+      if(extension === 'jpeg'){
+          extension = 'jpg'
+      }
+      const avatarUrl = await authorsAvatarPic(req.params.authorsId +`.${extension}`, req.file.buffer);
+      const authors = await readAuthors()
+      const authorsUrl = authors.find(author => author.id === req.params.authorsId)
+      authorsUrl.avatar = avatarUrl
+      const authorsArray = authors.filter(author => author.id !== req.params.authorsId) 
+      authorsArray.push(authorsUrl)
+      await writeAuthors(authorsArray.reverse())
+      res.send(200);
+    } catch (error) {
+      next(error);
     }
+  }
+);
 
-    authors.push(createAuthor)
-
-    //writing the changes on the disk
-    await writeAuthors(authors)
-
-    res.status(201).send({id: authors.id})
-})
-
-
-authorsRouter.post("/:authorsId/uploadAvatar" , async (req ,res) => {
-
-    console.log(req.body)
-
-    //spreading the whole body of the request sent by the client then adding an id and a date
-    const createAuthor = { ...req.body , createdAt: new Date() , id: uniqid() , avatar: `https://ui-avatars.com/api/?name=${req.body.name}+${req.body.surname}`}
-
-    const authors = await readAuthors()
-
-    if(authors.filter(author => author.email === req.body.email).length > 0){
-        res.status(403).send({succes: false , data: "User already exists"})
-        return
-    }
-
-    authors.push(createAuthor)
-
-    //writing the changes on the disk
-    await writeAuthors(authors)
-
-    res.status(201).send({id: authors.id})
-})
-
-
-authorsRouter.post("/checkEmail" , async (req ,res) => {
+/* authorsRouter.post("/checkEmail" , async (req ,res) => {
 
     const authors = await readAuthors()
 
@@ -90,46 +90,41 @@ authorsRouter.post("/checkEmail" , async (req ,res) => {
     } else {
         res.status(201).send({succes: true})
     }
-})
-
-
+}) */
 
 //Modify a unique author that has the matching Id
-authorsRouter.put("/:authorsId" , async (req ,res) => {
-    
-    //read all the authors
-    const authors = readAuthors()
-    //find the author
-    const indexOfAuthor = authors.findIndex(authors => authors.id === req.params.authorsId)
+authorsRouter.put("/:authorsId", async (req, res) => {
+  //read all the authors
+  const authors = readAuthors();
+  //find the author
+  const indexOfAuthor = authors.findIndex(
+    (authors) => authors.id === req.params.authorsId
+  );
 
-    //spreading the old body content and replacing some parts or everything with the request sent by the client
-    const updateAuthor = {...authors[indexOfAuthor] , ...req.body}
+  //spreading the old body content and replacing some parts or everything with the request sent by the client
+  const updateAuthor = { ...authors[indexOfAuthor], ...req.body };
 
-    authors[indexOfAuthor] = updateAuthor
+  authors[indexOfAuthor] = updateAuthor;
 
+  //writing the changes on the disk
+  await writeAuthors(authors);
 
-    //writing the changes on the disk
-    await writeAuthors(authors)
-
-    res.send(updateAuthor)
-})
-
-
+  res.send(updateAuthor);
+});
 
 //Delete a unique author that has the matching Id
-authorsRouter.delete("/:authorsId" , async (req ,res) => {
+authorsRouter.delete("/:authorsId", async (req, res) => {
+  //read the body content
+  const authors = await readAuthors();
 
-    //read the body content
-    const authors = await readAuthors()
+  const authorsArray = authors.filter(
+    (authors) => authors.id !== req.params.authorsId
+  );
 
-    const authorsArray = authors.filter(authors => authors.id !== req.params.authorsId)
+  //writing on the disk all the authors but not the deleted one
+  await writeAuthors(authorsArray);
 
-    //writing on the disk all the authors but not the deleted one
-    await writeAuthors(authorsArray)
+  res.status(204).send();
+});
 
-    res.status(204).send()
-})
-
-
-
-export default authorsRouter
+export default authorsRouter;

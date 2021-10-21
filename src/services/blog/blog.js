@@ -23,6 +23,7 @@ blogPostsRouter.get("/", async (req, res, next) => {
 });
 
 
+
 blogPostsRouter.get("/:blogPostId", async (req, res, next) => {
   try {
     //read
@@ -45,6 +46,8 @@ blogPostsRouter.get("/:blogPostId", async (req, res, next) => {
     next(error);
   }
 });
+
+
 
 blogPostsRouter.post("/", blogValidation , async (req, res, next) => {
   try {
