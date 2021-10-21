@@ -1,6 +1,7 @@
 import express from "express";
 import uniqid from "uniqid";
 import multer from "multer";
+import { extname } from "path"
 import { validationResult } from "express-validator";
 import createHttpError from "http-errors";
 import { blogValidation } from "./validation.js";
@@ -85,18 +86,16 @@ blogPostsRouter.post(
         next(createHttpError(400, { errorsList }));
       } else {
         console.log(req.file);
-        let extension = req.file.mimetype.split("/")[1];
-        if (extension === "jpeg") {
-          extension = "jpg";
-        }
-        const coverUrl = await blogsCover(
-          req.params.blogPostId + `.${extension}`,
+        const extension = extname(req.file.originalname)
+        await blogsCover(
+          req.params.blogPostId + extension,
           req.file.buffer
         );
         const blogs = await readBlogs();
         const blogsUrl = blogs.find(
           (blog) => blog._id === req.params.blogPostId
         );
+        const coverUrl = `http://localhost:3001/img/blogCover/${req.params.blogPostId}${extension}`
         blogsUrl.cover = coverUrl;
         const blogsArray = blogs.filter(
           (blogs) => blogs._id !== req.params.blogPostId

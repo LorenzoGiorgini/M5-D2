@@ -9,7 +9,7 @@ import { join } from "path"
 const server = express()
 
 
-const publicFolderPath = join(process.cwd(), "./src/public/")
+const publicFolderPath = join(process.cwd(), "./public")
 console.log(publicFolderPath)
 //FIRST TWO MIDDLEWARES
 server.use(express.static(publicFolderPath))

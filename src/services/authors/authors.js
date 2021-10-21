@@ -1,7 +1,7 @@
 import express from "express";
 import uniqid from "uniqid";
 import multer from "multer";
-
+import { extname } from "path"
 import {
   readAuthors,
   writeAuthors,
@@ -59,17 +59,23 @@ authorsRouter.post("/", async (req, res) => {
 
 authorsRouter.post("/:authorsId/uploadAvatar", multer().single("avatar"), async (req, res, next) => {
     try {
-      let extension = req.file.mimetype.split('/')[1]
-      if(extension === 'jpeg'){
-        extension = 'jpg'
-      }
-      const avatarUrl = await authorsAvatarPic(req.params.authorsId +`.${extension}`, req.file.buffer);
-      const authors = await readAuthors()
-      const authorsUrl = authors.find(author => author.id === req.params.authorsId)
-      authorsUrl.avatar = avatarUrl
-      const authorsArray = authors.filter(author => author.id !== req.params.authorsId) 
-      authorsArray.push(authorsUrl)
-      await writeAuthors(authorsArray.reverse())
+      console.log(req.file);
+      const extension = extname(req.file.originalname)
+      await authorsAvatarPic(
+        req.params.authorsId + extension,
+        req.file.buffer
+      );
+      const authors = await readAuthors();
+      const authorsUrl = authors.find(
+        (blog) => blog._id === req.params.blogPostId
+      );
+      const avatarUrl = `http://localhost:3001/img/authors/${req.params.authorsId}${extension}`
+      authorsUrl.avatar = avatarUrl;
+      const authorsArray = authors.filter(
+        (blogs) => blogs._id !== req.params.blogPostId
+      );
+      authorsArray.push(authorsUrl);
+      await writeAuthors(authorsArray.reverse());
       res.send(200);
     } catch (error) {
       next(error);
