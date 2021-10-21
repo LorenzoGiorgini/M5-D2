@@ -57,9 +57,8 @@ authorsRouter.post("/", async (req, res) => {
   res.status(201).send({ id: authors.id });
 });
 
-authorsRouter.post("/:authorsId/uploadAvatar", multer().single("avatar"), async (req, res, next) => {
+authorsRouter.post("/:authorsId/uploadAvatar" , multer().single("avatar") , async (req, res, next) => {
     try {
-      console.log(req.file);
       const extension = extname(req.file.originalname)
       await authorsAvatarPic(
         req.params.authorsId + extension,
@@ -67,15 +66,15 @@ authorsRouter.post("/:authorsId/uploadAvatar", multer().single("avatar"), async 
       );
       const authors = await readAuthors();
       const authorsUrl = authors.find(
-        (blog) => blog._id === req.params.blogPostId
+        (blog) => blog.id === req.params.authorsId
       );
       const avatarUrl = `http://localhost:3001/img/authors/${req.params.authorsId}${extension}`
       authorsUrl.avatar = avatarUrl;
       const authorsArray = authors.filter(
-        (blogs) => blogs._id !== req.params.blogPostId
+        (blogs) => blogs.id !== req.params.authorsId
       );
       authorsArray.push(authorsUrl);
-      await writeAuthors(authorsArray.reverse());
+      await writeAuthors(authorsArray);
       res.send(200);
     } catch (error) {
       next(error);
