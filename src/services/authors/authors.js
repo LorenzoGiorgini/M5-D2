@@ -33,7 +33,6 @@ authorsRouter.get("/:authorsId", async (req, res) => {
 
 //Create a unique author with an Id
 authorsRouter.post("/", async (req, res) => {
-  console.log(req.body);
 
   //spreading the whole body of the request sent by the client then adding an id and a date
   const createAuthor = {
@@ -58,14 +57,11 @@ authorsRouter.post("/", async (req, res) => {
   res.status(201).send({ id: authors.id });
 });
 
-authorsRouter.post(
-  "/:authorsId/uploadAvatar",
-  multer().single("avatar"),
-  async (req, res, next) => {
+authorsRouter.post("/:authorsId/uploadAvatar", multer().single("avatar"), async (req, res, next) => {
     try {
       let extension = req.file.mimetype.split('/')[1]
       if(extension === 'jpeg'){
-          extension = 'jpg'
+        extension = 'jpg'
       }
       const avatarUrl = await authorsAvatarPic(req.params.authorsId +`.${extension}`, req.file.buffer);
       const authors = await readAuthors()

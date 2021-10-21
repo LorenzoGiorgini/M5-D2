@@ -1,19 +1,18 @@
 import express from "express";
 import uniqid from "uniqid";
+import multer from "multer";
 import { validationResult } from "express-validator";
 import createHttpError from "http-errors";
 import { blogValidation } from "./validation.js";
 
-import { readBlogs , writeBlogs } from "../../lib/tools.js"
+import { readBlogs, writeBlogs, blogsCover } from "../../lib/tools.js";
 
 const blogPostsRouter = express.Router();
-
-
 
 blogPostsRouter.get("/", async (req, res, next) => {
   try {
     //read
-    const blogs = await readBlogs()
+    const blogs = await readBlogs();
 
     //send back the array
     res.status(200).send(blogs);
@@ -22,12 +21,10 @@ blogPostsRouter.get("/", async (req, res, next) => {
   }
 });
 
-
-
 blogPostsRouter.get("/:blogPostId", async (req, res, next) => {
   try {
     //read
-    const blogs = await readBlogs()
+    const blogs = await readBlogs();
 
     //check if there is a blogPostId
     const filterBlogs = blogs.filter(
@@ -47,9 +44,7 @@ blogPostsRouter.get("/:blogPostId", async (req, res, next) => {
   }
 });
 
-
-
-blogPostsRouter.post("/", blogValidation , async (req, res, next) => {
+blogPostsRouter.post("/", blogValidation, async (req, res, next) => {
   try {
     const errorsList = validationResult(req);
 
@@ -57,14 +52,19 @@ blogPostsRouter.post("/", blogValidation , async (req, res, next) => {
       next(createHttpError(400, { errorsList }));
     } else {
       //spread the req.body
-      const createdPost = { _id: uniqid(), ...req.body, createdAt: new Date() };
+      const createdPost = {
+        _id: uniqid(),
+        ...req.body,
+        createdAt: new Date(),
+        comments: [],
+      };
 
-      const blogs = await readBlogs()
+      const blogs = await readBlogs();
 
       blogs.push(createdPost);
 
       //write everything back to the json
-      await writeBlogs(blogs)
+      await writeBlogs(blogs);
 
       //send back the id of the newly created post
       res.status(201).send({ _id: blogs._id });
@@ -74,9 +74,46 @@ blogPostsRouter.post("/", blogValidation , async (req, res, next) => {
   }
 });
 
+blogPostsRouter.post(
+  "/:blogPostId/uploadCover",
+  multer().single("cover"),
+  async (req, res, next) => {
+    try {
+      const errorsList = validationResult(req);
+
+      if (!errorsList.isEmpty()) {
+        next(createHttpError(400, { errorsList }));
+      } else {
+        console.log(req.file);
+        let extension = req.file.mimetype.split("/")[1];
+        if (extension === "jpeg") {
+          extension = "jpg";
+        }
+        const coverUrl = await blogsCover(
+          req.params.blogPostId + `.${extension}`,
+          req.file.buffer
+        );
+        const blogs = await readBlogs();
+        const blogsUrl = blogs.find(
+          (blog) => blog._id === req.params.blogPostId
+        );
+        blogsUrl.cover = coverUrl;
+        const blogsArray = blogs.filter(
+          (blogs) => blogs._id !== req.params.blogPostId
+        );
+        blogsArray.push(blogsUrl);
+        await writeBlogs(blogsArray.reverse());
+        res.send(200);
+      }
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
 blogPostsRouter.put("/:blogPostId", async (req, res, next) => {
   try {
-    const blogs = await readBlogs()
+    const blogs = await readBlogs();
 
     const index = blogs.findIndex((blog) => blog._id === req.params.blogPostId);
 
@@ -84,7 +121,7 @@ blogPostsRouter.put("/:blogPostId", async (req, res, next) => {
 
     blogs[index] = newBlogPost;
 
-    await writeBlogs(blogs)
+    await writeBlogs(blogs);
 
     res.send(newBlogPost);
   } catch (error) {
@@ -94,15 +131,47 @@ blogPostsRouter.put("/:blogPostId", async (req, res, next) => {
 
 blogPostsRouter.delete("/:blogPostId", async (req, res, next) => {
   try {
-    const blogs = await readBlogs()
+    const blogs = await readBlogs();
 
     const blogsArray = blogs.filter(
       (blogs) => blogs._id !== req.params.blogPostId
     );
 
-    await writeBlogs(blogsArray)
+    await writeBlogs(blogsArray);
 
     res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+});
+
+//comments of the blogs
+
+blogPostsRouter.post("/:blogPostId/comments", async (req, res, next) => {
+  try {
+    const blogs = await readBlogs();
+    const index = blogs.findIndex((blog) => blog._id === req.params.blogPostId);
+    if (index !== -1) {
+      blogs[index].comments.push({
+        ...req.body,
+        id: uniqid(),
+        createdAt: new Date(),
+      });
+      await writeBlogs(blogs);
+      res.send(blogs[index].comments);
+    } else {
+      res.status(404).send("not found");
+    }
+
+    //re join them back
+  } catch (error) {
+    console.log(error);
+    next(error);
+  }
+});
+
+blogPostsRouter.get("/:blogPostId/comments", async (req, res, next) => {
+  try {
   } catch (error) {
     next(error);
   }
