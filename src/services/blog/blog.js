@@ -172,6 +172,13 @@ blogPostsRouter.post("/:blogPostId/comments", async (req, res, next) => {
 
 blogPostsRouter.get("/:blogPostId/comments", async (req, res, next) => {
   try {
+    const blogs = await readBlogs();
+    const findBlog = blogs.find(blog => blog._id === req.params.blogPostId)
+    if (findBlog) {
+      res.status(200).send(findBlog.comments)
+    } else {
+      res.status(404).send("Comment not found")
+    }
   } catch (error) {
     next(error);
   }

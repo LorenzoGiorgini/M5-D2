@@ -4,12 +4,15 @@ import authorsRouter from "./services/authors/authors.js";
 import blogPostsRouter from "./services/blog/blog.js"
 import cors from "cors"
 import { badRequest , unauthorizedHandler , notFoundHandler , defaultError } from "./errorHandlers.js"
-
+import { join } from "path"
 
 const server = express()
 
-//FIRST TWO MIDDLEWARES
 
+const publicFolderPath = join(process.cwd(), "./src/public/")
+console.log(publicFolderPath)
+//FIRST TWO MIDDLEWARES
+server.use(express.static(publicFolderPath))
 server.use(cors())
 server.use(express.json())  //parse every request to json
 
