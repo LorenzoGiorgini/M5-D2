@@ -1,28 +1,18 @@
 import express from "express";
-import fs from "fs"
-import { fileURLToPath } from "url";
-import { dirname, join } from "path";
 import uniqid from "uniqid"
 
+import { readAuthors , writeAuthors , authorsAvatarPic} from "../../lib/tools.js"
+
+
 const authorsRouter = express.Router()
-
-//Main folder
-const currentFolder = dirname(fileURLToPath(import.meta.url))
-
-
-//Joined Main folder with json file
-const authorsJsonPath = join(currentFolder , "authors.json")
-
 
 
 
 //Get all the authors
-authorsRouter.get("/" , (req ,res) => {
+authorsRouter.get("/" , async (req ,res) => {
     
     //reading the whole body converting it from machine language to JSON
-    const authors = JSON.parse(fs.readFileSync(authorsJsonPath))
-
-    console.log(authors)
+    const authors = await readAuthors()
     
     //Sending the whole body as a response
     res.status(200).send(authors)
@@ -31,13 +21,13 @@ authorsRouter.get("/" , (req ,res) => {
 
 
 //Get  the author with the matching Id
-authorsRouter.get("/:authorsId" , (req ,res) => {
-    const authors = JSON.parse(fs.readFileSync(authorsJsonPath))
+authorsRouter.get("/:authorsId" , async (req ,res) => {
+
+
+    const authors = await readAuthors()
 
     //filtering the author that have that id
     const filteredAuthors = authors.find( authors => authors.id === req.params.authorsId)
-
-    console.log(req.params.authorsId)
 
     res.status(200).send(filteredAuthors)
 })
@@ -45,14 +35,14 @@ authorsRouter.get("/:authorsId" , (req ,res) => {
 
 
 //Create a unique author with an Id
-authorsRouter.post("/" , (req ,res) => {
+authorsRouter.post("/" , async (req ,res) => {
 
     console.log(req.body)
 
     //spreading the whole body of the request sent by the client then adding an id and a date
     const createAuthor = { ...req.body , createdAt: new Date() , id: uniqid() , avatar: `https://ui-avatars.com/api/?name=${req.body.name}+${req.body.surname}`}
 
-    const authors = JSON.parse(fs.readFileSync(authorsJsonPath))
+    const authors = await readAuthors()
 
     if(authors.filter(author => author.email === req.body.email).length > 0){
         res.status(403).send({succes: false , data: "User already exists"})
@@ -62,15 +52,38 @@ authorsRouter.post("/" , (req ,res) => {
     authors.push(createAuthor)
 
     //writing the changes on the disk
-    fs.writeFileSync(authorsJsonPath , JSON.stringify(authors))
+    await writeAuthors(authors)
 
     res.status(201).send({id: authors.id})
 })
 
 
-authorsRouter.post("/checkEmail" , (req ,res) => {
+authorsRouter.post("/:authorsId/uploadAvatar" , async (req ,res) => {
 
-    const authors = JSON.parse(fs.readFileSync(authorsJsonPath))
+    console.log(req.body)
+
+    //spreading the whole body of the request sent by the client then adding an id and a date
+    const createAuthor = { ...req.body , createdAt: new Date() , id: uniqid() , avatar: `https://ui-avatars.com/api/?name=${req.body.name}+${req.body.surname}`}
+
+    const authors = await readAuthors()
+
+    if(authors.filter(author => author.email === req.body.email).length > 0){
+        res.status(403).send({succes: false , data: "User already exists"})
+        return
+    }
+
+    authors.push(createAuthor)
+
+    //writing the changes on the disk
+    await writeAuthors(authors)
+
+    res.status(201).send({id: authors.id})
+})
+
+
+authorsRouter.post("/checkEmail" , async (req ,res) => {
+
+    const authors = await readAuthors()
 
     if(authors.filter(author => author.email === req.body.email).length > 0){
         res.status(403).send({succes: false , data: "User already exists"})
@@ -82,11 +95,10 @@ authorsRouter.post("/checkEmail" , (req ,res) => {
 
 
 //Modify a unique author that has the matching Id
-authorsRouter.put("/:authorsId" , (req ,res) => {
+authorsRouter.put("/:authorsId" , async (req ,res) => {
     
     //read all the authors
-    const authors = JSON.parse(fs.readFileSync(authorsJsonPath))
-
+    const authors = readAuthors()
     //find the author
     const indexOfAuthor = authors.findIndex(authors => authors.id === req.params.authorsId)
 
@@ -97,7 +109,7 @@ authorsRouter.put("/:authorsId" , (req ,res) => {
 
 
     //writing the changes on the disk
-    fs.writeFileSync(authorsJsonPath, JSON.stringify(authors))
+    await writeAuthors(authors)
 
     res.send(updateAuthor)
 })
@@ -105,15 +117,15 @@ authorsRouter.put("/:authorsId" , (req ,res) => {
 
 
 //Delete a unique author that has the matching Id
-authorsRouter.delete("/:authorsId" , (req ,res) => {
+authorsRouter.delete("/:authorsId" , async (req ,res) => {
 
     //read the body content
-    const authors = JSON.parse(fs.readFileSync(authorsJsonPath))
+    const authors = await readAuthors()
 
     const authorsArray = authors.filter(authors => authors.id !== req.params.authorsId)
 
     //writing on the disk all the authors but not the deleted one
-    fs.writeFileSync(authorsJsonPath, JSON.stringify(authorsArray))
+    await writeAuthors(authorsArray)
 
     res.status(204).send()
 })

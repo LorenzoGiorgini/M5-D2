@@ -1,24 +1,19 @@
 import express from "express";
-import fs from "fs";
-import { fileURLToPath } from "url";
-import { dirname, join } from "path";
 import uniqid from "uniqid";
 import { validationResult } from "express-validator";
 import createHttpError from "http-errors";
 import { blogValidation } from "./validation.js";
 
+import { readBlogs , writeBlogs } from "../../lib/tools.js"
+
 const blogPostsRouter = express.Router();
 
-//Main folder
-const blogsPostJson = join(
-  dirname(fileURLToPath(import.meta.url)),
-  "blog.json"
-);
 
-blogPostsRouter.get("/", (req, res, next) => {
+
+blogPostsRouter.get("/", async (req, res, next) => {
   try {
     //read
-    const blogs = JSON.parse(fs.readFileSync(blogsPostJson));
+    const blogs = await readBlogs()
 
     //send back the array
     res.status(200).send(blogs);
@@ -27,10 +22,11 @@ blogPostsRouter.get("/", (req, res, next) => {
   }
 });
 
-blogPostsRouter.get("/:blogPostId", (req, res, next) => {
+
+blogPostsRouter.get("/:blogPostId", async (req, res, next) => {
   try {
     //read
-    const blogs = JSON.parse(fs.readFileSync(blogsPostJson));
+    const blogs = await readBlogs()
 
     //check if there is a blogPostId
     const filterBlogs = blogs.filter(
@@ -50,7 +46,7 @@ blogPostsRouter.get("/:blogPostId", (req, res, next) => {
   }
 });
 
-blogPostsRouter.post("/", blogValidation , (req, res, next) => {
+blogPostsRouter.post("/", blogValidation , async (req, res, next) => {
   try {
     const errorsList = validationResult(req);
 
@@ -60,12 +56,12 @@ blogPostsRouter.post("/", blogValidation , (req, res, next) => {
       //spread the req.body
       const createdPost = { _id: uniqid(), ...req.body, createdAt: new Date() };
 
-      const blogs = JSON.parse(fs.readFileSync(blogsPostJson));
+      const blogs = await readBlogs()
 
       blogs.push(createdPost);
 
       //write everything back to the json
-      fs.writeFileSync(blogsPostJson, JSON.stringify(blogs));
+      await writeBlogs(blogs)
 
       //send back the id of the newly created post
       res.status(201).send({ _id: blogs._id });
@@ -75,9 +71,9 @@ blogPostsRouter.post("/", blogValidation , (req, res, next) => {
   }
 });
 
-blogPostsRouter.put("/:blogPostId", (req, res, next) => {
+blogPostsRouter.put("/:blogPostId", async (req, res, next) => {
   try {
-    const blogs = JSON.parse(fs.readFileSync(blogsPostJson));
+    const blogs = await readBlogs()
 
     const index = blogs.findIndex((blog) => blog._id === req.params.blogPostId);
 
@@ -85,7 +81,7 @@ blogPostsRouter.put("/:blogPostId", (req, res, next) => {
 
     blogs[index] = newBlogPost;
 
-    fs.writeFileSync(blogsPostJson, JSON.stringify(blogs));
+    await writeBlogs(blogs)
 
     res.send(newBlogPost);
   } catch (error) {
@@ -93,15 +89,15 @@ blogPostsRouter.put("/:blogPostId", (req, res, next) => {
   }
 });
 
-blogPostsRouter.delete("/:blogPostId", (req, res, next) => {
+blogPostsRouter.delete("/:blogPostId", async (req, res, next) => {
   try {
-    const blogs = JSON.parse(fs.readFileSync(blogsPostJson));
+    const blogs = await readBlogs()
 
     const blogsArray = blogs.filter(
       (blogs) => blogs._id !== req.params.blogPostId
     );
 
-    fs.writeFileSync(blogsPostJson, JSON.stringify(blogsArray));
+    await writeBlogs(blogsArray)
 
     res.status(204).send();
   } catch (error) {
