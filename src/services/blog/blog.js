@@ -1,7 +1,7 @@
 import express from "express";
 import uniqid from "uniqid";
 import multer from "multer";
-import { extname } from "path"
+import { extname } from "path";
 import { validationResult } from "express-validator";
 import createHttpError from "http-errors";
 import { blogValidation } from "./validation.js";
@@ -68,7 +68,7 @@ blogPostsRouter.post("/", blogValidation, async (req, res, next) => {
       await writeBlogs(blogs);
 
       //send back the id of the newly created post
-      res.status(201).send({ _id: blogs._id });
+      res.status(201).send(createdPost);
     }
   } catch (error) {
     next(error);
@@ -86,16 +86,13 @@ blogPostsRouter.post(
         next(createHttpError(400, { errorsList }));
       } else {
         console.log(req.file);
-        const extension = extname(req.file.originalname)
-        await blogsCover(
-          req.params.blogPostId + extension,
-          req.file.buffer
-        );
+        const extension = extname(req.file.originalname);
+        await blogsCover(req.params.blogPostId + extension, req.file.buffer);
         const blogs = await readBlogs();
         const blogsUrl = blogs.find(
           (blog) => blog._id === req.params.blogPostId
         );
-        const coverUrl = `http://localhost:3001/img/blogCover/${req.params.blogPostId}${extension}`
+        const coverUrl = `http://localhost:3001/img/blogCover/${req.params.blogPostId}${extension}`;
         blogsUrl.cover = coverUrl;
         const blogsArray = blogs.filter(
           (blogs) => blogs._id !== req.params.blogPostId
@@ -172,15 +169,75 @@ blogPostsRouter.post("/:blogPostId/comments", async (req, res, next) => {
 blogPostsRouter.get("/:blogPostId/comments", async (req, res, next) => {
   try {
     const blogs = await readBlogs();
-    const findBlog = blogs.find(blog => blog._id === req.params.blogPostId)
+    const findBlog = blogs.find((blog) => blog._id === req.params.blogPostId);
     if (findBlog) {
-      res.status(200).send(findBlog.comments)
+      res.status(200).send(findBlog.comments);
     } else {
-      res.status(404).send("Comment not found")
+      res.status(404).send("Comment not found");
     }
   } catch (error) {
     next(error);
   }
 });
+
+blogPostsRouter.put(
+  "/:blogPostId/comments/:commentId",
+  async (req, res, next) => {
+    try {
+      const blogs = await readBlogs();
+
+      const findBlog = blogs.find((blog) => blog._id === req.params.blogPostId);
+
+      const index = blogs.findIndex(
+        (blog) => blog._id === req.params.blogPostId
+      );
+
+      const filteredCommentIndex = findBlog.comments.findIndex(
+        (comment) => comment.id === req.params.commentId
+      );
+
+      blogs[index].comments[filteredCommentIndex] = {
+        ...blogs[index].comments[filteredCommentIndex],
+        ...req.body,
+        updatedAt: new Date().toISOString(),
+      };
+
+      await writeBlogs(blogs);
+
+      res.send("ok");
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+blogPostsRouter.delete(
+  "/:blogPostId/comments/:commentId",
+  async (req, res, next) => {
+    try {
+      const blogs = await readBlogs();
+
+      const findBlog = blogs.find((blog) => blog._id === req.params.blogPostId);
+
+      const index = blogs.findIndex(
+        (blog) => blog._id === req.params.blogPostId
+      );
+
+      const filteredComments = findBlog.comments.filter(
+        (comment) => comment.id !== req.params.commentId
+      );
+
+      findBlog.comments = filteredComments;
+
+      blogs[index] = findBlog;
+
+      await writeBlogs(blogs);
+
+      res.status(204).send();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 export default blogPostsRouter;

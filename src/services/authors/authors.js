@@ -82,7 +82,7 @@ authorsRouter.post("/:authorsId/uploadAvatar" , multer().single("avatar") , asyn
   }
 );
 
-/* authorsRouter.post("/checkEmail" , async (req ,res) => {
+authorsRouter.post("/checkEmail" , async (req ,res) => {
 
     const authors = await readAuthors()
 
@@ -91,7 +91,7 @@ authorsRouter.post("/:authorsId/uploadAvatar" , multer().single("avatar") , asyn
     } else {
         res.status(201).send({succes: true})
     }
-}) */
+})
 
 //Modify a unique author that has the matching Id
 authorsRouter.put("/:authorsId", async (req, res) => {
