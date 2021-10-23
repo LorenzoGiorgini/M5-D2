@@ -75,10 +75,8 @@ blogPostsRouter.post("/", blogValidation, async (req, res, next) => {
   }
 });
 
-blogPostsRouter.post(
-  "/:blogPostId/uploadCover",
-  multer().single("cover"),
-  async (req, res, next) => {
+
+blogPostsRouter.post("/:blogPostId/uploadCover" , multer().single("cover"),async (req, res, next) => {
     try {
       const errorsList = validationResult(req);
 
@@ -98,7 +96,7 @@ blogPostsRouter.post(
           (blogs) => blogs._id !== req.params.blogPostId
         );
         blogsArray.push(blogsUrl);
-        await writeBlogs(blogsArray.reverse());
+        await writeBlogs(blogsArray);
         res.send(200);
       }
     } catch (error) {
@@ -106,6 +104,7 @@ blogPostsRouter.post(
     }
   }
 );
+
 
 blogPostsRouter.put("/:blogPostId", async (req, res, next) => {
   try {
@@ -120,6 +119,7 @@ blogPostsRouter.put("/:blogPostId", async (req, res, next) => {
     await writeBlogs(blogs);
 
     res.send(newBlogPost);
+
   } catch (error) {
     next(error);
   }
@@ -127,15 +127,15 @@ blogPostsRouter.put("/:blogPostId", async (req, res, next) => {
 
 blogPostsRouter.delete("/:blogPostId", async (req, res, next) => {
   try {
+
     const blogs = await readBlogs();
 
-    const blogsArray = blogs.filter(
-      (blogs) => blogs._id !== req.params.blogPostId
-    );
+    const blogsArray = blogs.filter((blogs) => blogs._id !== req.params.blogPostId);
 
     await writeBlogs(blogsArray);
 
     res.status(204).send();
+
   } catch (error) {
     next(error);
   }
@@ -158,10 +158,7 @@ blogPostsRouter.post("/:blogPostId/comments", async (req, res, next) => {
     } else {
       res.status(404).send("not found");
     }
-
-    //re join them back
   } catch (error) {
-    console.log(error);
     next(error);
   }
 });

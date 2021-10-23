@@ -15,13 +15,13 @@ export const readBlogs = () => fs.readJSON(blogFolder)
 export const writeBlogs = (content) => fs.writeJSON(blogFolder , content)
 
 export const authorsAvatarPic = (fileName , buffer) => {
-    writeFile(join(publicFolderAuthors , fileName) , buffer)
+    fs.writeFile(join(publicFolderAuthors , fileName) , buffer)
 
     return publicFolderAuthors + fileName
 }
 
 export const blogsCover = (fileName , buffer) => {
-    writeFile(join(publicFolderBlogs , fileName) , buffer)
+    fs.writeFile(join(publicFolderBlogs , fileName) , buffer)
 
     return publicFolderBlogs + fileName
 }
